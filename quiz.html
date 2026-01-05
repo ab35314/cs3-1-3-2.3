@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CH3 系統平台王者挑戰賽</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --accent-color: #ffce00;
+            --glass: rgba(255, 255, 255, 0.98); /* 稍微調高不透明度 */
+            --text-dark: #2c3e50; /* 定義深色文字 */
+        }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: #1a1a2e;
+            background-image: radial-gradient(circle at 20% 30%, #2a2a72 0%, #00d2ff 100%);
+            background-attachment: fixed;
+            margin: 0; padding: 20px;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; color: #fff;
+        }
+        .container {
+            background: var(--glass); padding: 2.5rem; border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4); width: 100%; max-width: 600px;
+            text-align: center; color: var(--text-dark); border: 5px solid var(--accent-color);
+        }
+        h1 {
+            font-weight: 900; background: linear-gradient(to right, #6a11cb 0%, #2575fc 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-size: 2.2rem; margin-top: 0;
+        }
+        .input-group { margin: 15px 0; }
+        input {
+            width: 90%; padding: 15px; border: 2px solid #ddd; border-radius: 15px;
+            font-size: 1.1rem; outline: none; box-sizing: border-box; color: #333;
+        }
+        button.main-btn {
+            background: var(--primary-gradient); color: white; border: none;
+            padding: 15px 45px; border-radius: 50px; cursor: pointer;
+            font-size: 1.2rem; font-weight: bold; margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        button.main-btn:hover { transform: scale(1.05); }
+        .quiz-header {
+            display: flex; justify-content: space-between; background: #f0f0f0;
+            padding: 12px 20px; border-radius: 50px; margin-bottom: 25px;
+            font-weight: bold; color: #555; font-size: 0.9rem;
+        }
+        .question {
+            font-size: 1.25rem; font-weight: 700; text-align: left;
+            margin-bottom: 25px; color: var(--text-dark); line-height: 1.6;
+        }
+        /* 修正選項按鈕樣式 */
+        .option-btn {
+            display: block; width: 100%; background: #ffffff; margin: 15px 0; padding: 18px;
+            border-radius: 15px; cursor: pointer; text-align: left;
+            border: 2px solid #e0e0e0; font-size: 1.1rem; transition: 0.2s;
+            font-family: inherit; color: #333333 !important; /* 強制設定文字為深色 */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .option-btn:hover { 
+            background: #f0f7ff; 
+            border-color: #667eea;
+            box-shadow: 0 6px 12px rgba(102,126,234,0.15);
+        }
+        .option-btn strong { color: #667eea; margin-right: 8px; }
+        .hidden { display: none; }
+        .score-val { font-size: 5rem; color: #e74c3c; font-weight: 900; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="login-screen">
+        <h1>🎮 系統平台挑戰賽</h1>
+        <p>請輸入特工資料解鎖測驗</p>
+        <div class="input-group"><input type="text" id="stu-class" placeholder="班級 (例如: 101)"></div>
+        <div class="input-group"><input type="number" id="stu-no" placeholder="座號"></div>
+        <div class="input-group"><input type="text" id="stu-name" placeholder="姓名"></div>
+        <button class="main-btn" onclick="startQuiz()">START 開始挑戰</button>
+    </div>
+
+    <div class="container hidden" id="quiz-screen">
+        <div class="quiz-header">
+            <span id="display-info"></span>
+            <span id="progress"></span>
+        </div>
+        <div id="question-text" class="question"></div>
+        <div id="options-container"></div>
+    </div>
+
+    <div class="container hidden" id="result-screen">
+        <h1>任務完成！</h1>
+        <p style="font-size: 1.2rem;"><strong id="res-name-display"></strong> 同學，您的得分：</p>
+        <div class="score-val" id="res-score">0</div>
+        <p id="res-date" style="color: #7f8c8d;"></p>
+        <button class="main-btn" onclick="resetQuiz()">🔄 再玩一次</button>
+    </div>
+
+<script>
+    const questions = [
+        { q: "早期的電腦若要改變用途，通常必須如何處理？", a: ["重新下載驅動程式", "更換軟體版本", "變更線路結構或重新設計機器", "修改作業系統"], c: 2 },
+        { q: "「內儲程式電腦」的概念將指令儲存在何處，使運算單元讀取即可執行？", a: ["控制單元", "記憶體", "輸出單元", "匯流排"], c: 1 },
+        { q: "下列何者是作業系統（OS）的主要功能？", a: ["管理硬體資源並調配軟體運作", "單純用來播放影片", "取代處理器進行邏輯運算", "增加電腦的儲存空間"], c: 0 },
+        { q: "在瀏覽器平台上開發網頁應用程式時，通常首選哪種語言？", a: ["Swift", "Kotlin", "C++", "JavaScript"], c: 3 },
+        { q: "作業系統中，直接操作硬體並負責管理檔案、分配資源的部分稱為？", a: ["作業環境 (Shell)", "核心 (Kernel)", "應用程式", "驅動程式"], c: 1 },
+        { q: "現代作業系統多採用圖形化使用者介面，其英文縮寫為何？", a: ["GUI", "GOP", "GPU", "GDI"], c: 0 },
+        { q: "數學家范紐曼提出的電腦五大單元中，不包含下列哪一個？", a: ["控制單元", "記憶單元", "雲端單元", "輸入單元"], c: 2 },
+        { q: "哪一種匯流排負責傳送系統時脈與讀、寫訊號，且屬於「單向」傳輸？", a: ["資料匯流排", "位址匯流排", "USB 匯流排", "控制匯流排"], c: 3 },
+        { q: "關於位址匯流排（Address Bus）的敘述，下列何者正確？", a: ["負責傳送處理結果", "由 CPU 傳送到記憶單元", "屬於雙向傳輸", "連接滑鼠專用"], c: 1 },
+        { q: "USB 介面從哪個版本開始引入正反皆可插入的 Type-C 規格？", a: ["USB 3.1", "USB 2.0", "USB 1.1", "USB 3.0"], c: 0 },
+        { q: "Thunderbolt 傳輸介面是由哪一家公司發表的？", a: ["Apple", "AMD", "Intel", "Microsoft"], c: 2 },
+        { q: "專門為電腦加快「影像處理」的硬體稱為？", a: ["NPU", "BIOS", "CPU", "GPU"], c: 3 },
+        { q: "主機背面的 RJ-45 連接埠主要用於連接？", a: ["螢幕", "鍵盤", "印表機", "網路線"], c: 3 },
+        { q: "若要將電腦的數位影像與音訊輸出到電視，應優先使用哪種埠？", a: ["HDMI 埠", "D-Sub 埠", "PS/2 埠", "音效孔"], c: 0 },
+        { q: "早期電腦主機背面「綠色」的 PS/2 連接埠是用來連接？", a: ["鍵盤", "滑鼠", "喇叭", "掃描器"], c: 1 },
+        { q: "主機板上用來安裝「動態隨機存取記憶體」模組的是？", a: ["SATA 插槽", "CPU 插槽", "PCI 擴充槽", "DRAM 插槽"], c: 3 },
+        { q: "主機板上負責開機測試與初始化，並為 OS 提供韌體功能的是？", a: ["BIOS", "CMOS", "GPU", "NPU"], c: 0 },
+        { q: "智慧型手機內，哪一個模組可擷取臉部資料製作深度測繪圖？", a: ["無線充電模組", "原深感測相機", "震動引擎", "揚聲器"], c: 1 },
+        { q: "關於電腦類型的敘述，計算速度最快且價格最昂貴的是？", a: ["伺服器", "工作站", "超級電腦", "微電腦"], c: 2 },
+        { q: "智慧型手機、平板電腦與筆電，皆屬於下列哪種電腦類型？", a: ["嵌入式電腦", "大型電腦", "工作站", "微電腦 (個人電腦)"], c: 3 },
+        { q: "微處理器的指令結構，主要由「運算碼」與哪一部分組成？", a: ["暫存器", "控制碼", "運算元", "位址"], c: 2 },
+        { q: "關於精簡指令集（RISC）的敘述，下列何者正確？", a: ["適合行動裝置與手機", "較為耗電", "x86 處理器之基礎", "主要用於超級電腦"], c: 0 },
+        { q: "CPU 指令運作週期中，「執行」與「儲存」合稱為什麼？", a: ["擷取週期", "執行週期", "機器週期", "時脈週期"], c: 1 },
+        { q: "隨機存取記憶體（RAM）具備何種特性？", a: ["非揮發性", "電源消失後資料依然存在", "只能讀取不能寫入", "電源消失後資料會消失"], c: 3 },
+        { q: "下列記憶體中，存取速度「由快至慢」排列何者正確？", a: ["主記憶體 > 暫存器", "快取 > 暫存器", "暫存器 > 快取 > 主記憶體", "暫存器 > 輔助記憶體 > 快取"], c: 2 }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    let userName = "";
+    let userClass = "";
+    let userNo = "";
+
+    function startQuiz() {
+        userClass = document.getElementById('stu-class').value;
+        userNo = document.getElementById('stu-no').value;
+        userName = document.getElementById('stu-name').value;
+
+        if (userClass === "" || userNo === "" || userName === "") {
+            alert("請填寫完整資料！");
+            return;
+        }
+
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        document.getElementById('display-info').innerText = "👤 " + userClass + "班 " + userNo + "號 " + userName;
+        
+        currentIdx = 0;
+        score = 0;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const item = questions[currentIdx];
+        document.getElementById('progress').innerText = "題目: " + (currentIdx + 1) + " / " + questions.length;
+        document.getElementById('question-text').innerText = "Q" + (currentIdx + 1) + ". " + item.q;
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = "";
+
+        item.a.forEach((text, i) => {
+            const btn = document.createElement('button');
+            btn.className = "option-btn";
+            btn.innerHTML = "<strong>" + String.fromCharCode(65 + i) + ".</strong> " + text;
+            btn.onclick = function() { selectOption(i); };
+            container.appendChild(btn);
+        });
+    }
+
+    function selectOption(choice) {
+        if (choice === questions[currentIdx].c) {
+            score += 4;
+        }
+
+        currentIdx++;
+        if (currentIdx < questions.length) {
+            showQuestion();
+        } else {
+            finishQuiz();
+        }
+    }
+
+    function finishQuiz() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('res-name-display').innerText = userName;
+        document.getElementById('res-score').innerText = score;
+        document.getElementById('res-date').innerText = "完成日期：" + new Date().toLocaleDateString();
+    }
+
+    function resetQuiz() {
+        document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('stu-class').value = "";
+        document.getElementById('stu-no').value = "";
+        document.getElementById('stu-name').value = "";
+    }
+</script>
+</body>
+</html>
